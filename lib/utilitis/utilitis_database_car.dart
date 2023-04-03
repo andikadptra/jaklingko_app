@@ -9,29 +9,27 @@ _getDataCar() async {
     return dataCar;
   }
 
-void _insertDataCar() async {
+void _insertDataCar(String namecar) async {
     Map<String, dynamic> row = {
-      DatabaseHelper.columnMarkers: 'John',
-      DatabaseHelper.columnLatlng: 'North',
+      DatabaseHelper.nameCar: namecar,
     };
     final id = await dbHelper.insertCar(row);
     print('Data baru dengan id: $id telah disimpan.');
     _getDataCar();
   }
 
-  void _updateDataCar() async {
+  void _updateDataCar(int id, String namecar) async {
     Map<String, dynamic> row = {
-      DatabaseHelper.columnId: 1,
-      DatabaseHelper.columnMarkers: 'Jane',
-      DatabaseHelper.columnLatlng: 'South',
+      DatabaseHelper.columnId: id,
+      DatabaseHelper.nameCar: namecar,
     };
     final rowsAffected = await dbHelper.updateCar(row);
     print('$rowsAffected baris telah diperbarui.');
     _getDataCar();
   }
 
-  void _deleteDataCar() async {
-    final id = 1;
+  void _deleteDataCar(int thisId) async {
+    final id = thisId;
     final rowsDeleted = await dbHelper.deleteCar(id);
     print('$rowsDeleted baris telah dihapus.');
     _getDataCar();
