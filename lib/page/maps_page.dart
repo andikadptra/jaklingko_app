@@ -1,5 +1,8 @@
 import 'package:driver_app/components/constants.dart';
+import 'package:driver_app/database/database_helper_car.dart';
 import 'package:driver_app/database/database_helper_dir.dart';
+import 'package:driver_app/page/first_page.dart';
+import 'package:driver_app/utilitis/utilitis_database_car.dart';
 import 'package:driver_app/utilitis/utilitis_database_dir.dart';
 import 'package:driver_app/page/wifi_page.dart';
 import 'package:flutter/material.dart';
@@ -10,15 +13,21 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geolocator_platform_interface/src/enums/location_accuracy.dart';
 
 class carSelect extends StatefulWidget {
-  const carSelect({Key? key}) : super(key: key);
+  late String carSelectonOutside;
+  carSelect({Key? key, required this.carSelectonOutside}) : super(key: key);
+
 
   @override
   State<carSelect> createState() => _carSelectState();
 }
 
 class _carSelectState extends State<carSelect> {
+  late String catchCarSelect = widget.carSelectonOutside;
+
   TextEditingController _controller = TextEditingController();
   bool _keyboardIsVisible = false;
+  late String selectedRoute;
+  late String selectedCar;
 
   List<String> menuItems = [
     'TAMBAH MOBIL',
@@ -27,30 +36,45 @@ class _carSelectState extends State<carSelect> {
     'PILIH MOBIL'
   ];
 
+  List<Map<String, dynamic>> _fetchData = [];
+
+  void _getData() async {
+    _fetchData = await getDataCar();
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _getData();
+  }
+
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
   }
+  late String appBartxt = widget.carSelectonOutside;
 
-  List sampleData = [
-    {
-      'columnId' : 1, 
-      'nameCar' : 'A10',
-    }
-  ];
-  
 
-  String appBartxt = 'PILIH MOBIL';
 
   Widget build(BuildContext context) {
 
+    
+
     return Scaffold(
-      floatingActionButton: appBartxt == 'TAMBAH MOBIL' ? FloatingActionButton.extended(onPressed: () {
-        showDialog(context: context, builder: (BuildContext context) {
-          return PopupAdd();
-        });
-      }, label: Text('TAMBAH'),) : null,
+      floatingActionButton: appBartxt == 'TAMBAH MOBIL'
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                showDialog(
+                    context: context,
+                    builder: (BuildContext context) {
+                      return PopupAdd();
+                    });
+              },
+              label: Text('TAMBAH'),
+            )
+          : null,
       appBar: AppBar(
         title: Text(appBartxt),
         actions: [
@@ -97,7 +121,7 @@ class _carSelectState extends State<carSelect> {
         ],
       ),
       body: ListView.builder(
-        itemCount: sampleData.length,
+        itemCount: _fetchData.length,
         itemBuilder: (context, index) {
           return Padding(
             padding: const EdgeInsets.all(4),
@@ -108,35 +132,39 @@ class _carSelectState extends State<carSelect> {
               child: GestureDetector(
                 onTap: () {
                   switch (appBartxt) {
-                    case 'PILIH MOBIL':
-                      null;
-                      break;
                     case 'TAMBAH MOBIL':
-
+                      
                       break;
                     case 'EDIT NAMA MOBIL':
-                      showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return PopupEdit(id: sampleData[index]['columnId'], name: sampleData[index]['nameCar'],);
-                          });
+
                       break;
                     case 'HAPUS MOBIL':
+                      print('monitor : ${_fetchData[index][DatabaseHelperCar.columnId]}');
                       showDialog(
-                          context: context,
-                          builder: (BuildContext context) {
-                            return PopupDelete(id: sampleData[index]['columnId'], name: sampleData[index]['nameCar'],);
-                          });
+                    context: context,
+                    builder: (BuildContext context) {
+                      return PopupDelete(id: _fetchData[index][DatabaseHelperCar.columnId], name: _fetchData[index][DatabaseHelperCar.nameCar]);
+                    });
+                      
+                      break;
+                    case 'PILIH MOBIL':
+
                       break;
                     default:
                   }
                 },
                 child: ListTile(
                   title: Text(
-                    'A01',
+                    _fetchData[index][DatabaseHelperCar.nameCar]
+                        .toString()
+                        .toUpperCase(),
                     style: TextStyle(color: Colors.white),
                   ),
-                  subtitle: Text('A02', style: TextStyle(color: Colors.white)),
+                  subtitle: Text(
+                      _fetchData[index][DatabaseHelperCar.nameCar]
+                          .toString()
+                          .toUpperCase(),
+                      style: TextStyle(color: Colors.white)),
                   trailing: appBartxt == 'PILIH MOBIL'
                       ? Text('')
                       : appBartxt == 'TAMBAH MOBIL'
@@ -679,15 +707,15 @@ class _NextPageState extends State<NextPage> {
     'PILIH DATA RUTE'
   ];
 
-  List<Map<String, dynamic>> fetchData = [];
+  List<Map<String, dynamic>> _fetchData = [];
 
-  void _fetchData() async {
-    fetchData = await getDataDir();
+  void _getData() async {
+    _fetchData = await getDataDir();
     setState(() {});
   }
 
   void _deleteData(int index) {
-    deleteDataDir(fetchData[index][DatabaseHelper.columnId]);
+    deleteDataDir(_fetchData[index][DatabaseHelperDir.columnId]);
     setState(() {});
   }
 
@@ -695,10 +723,10 @@ class _NextPageState extends State<NextPage> {
   void initState() {
     // TODO: implement initState
     super.initState();
-    _fetchData();
+    _getData();
   }
 
-  String condPage = 'DATA RUTE';
+  String condPage = 'PILIH DATA RUTE';
   String appBartxt = 'PILIH DATA RUTE';
 
   @override
@@ -759,97 +787,130 @@ class _NextPageState extends State<NextPage> {
           ),
         ],
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Container(
-            child: Center(
-              child: Text(
-                condPage,
-                style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold),
+          Align(
+            alignment: Alignment.bottomLeft,
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: Container(
+                width: 50,
+                height: 50,
+                child: Center(
+                  child: IconButton(
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) => firstPage()),
+                        );
+                      },
+                      icon: Icon(
+                        Icons.home,
+                        color: Colors.blue,
+                        size: 50,
+                      )),
+                ),
               ),
             ),
           ),
-          SingleChildScrollView(
-            child: Container(
-              child: ListView.builder(
-                scrollDirection: Axis.vertical,
-                shrinkWrap: true,
-                itemCount: fetchData.length,
-                itemBuilder: (BuildContext context, int index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ElevatedButton(
-                        style: ButtonStyle(backgroundColor:
-                            MaterialStateProperty.resolveWith<Color>(
-                                (Set<MaterialState> states) {
-                          if (states.contains(MaterialState.pressed)) {
-                            return Colors.white38; // warna saat ditekan
-                          }
-                          return Colors.blue;
-                        })),
-                        onPressed: () {
-                          print('monitor : fetchdata : ${fetchData}');
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (BuildContext context) =>
-                                      carSelect()));
-                        },
-                        child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Halte : ${fetchData[index][DatabaseHelper.nameStop]}',
-                                style: TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.w400,
-                                    color: Colors.white),
-                              ),
-                              condPage == 'DATA RUTE'
-                                  ? Container()
-                                  : condPage == 'EDIT NAMA RUTE'
-                                      ? Align(
-                                          child: IconButton(
-                                              onPressed: () {
-                                                // Navigator.push(context, MaterialPageRoute(builder: ((context) => wifiPage(message: '${noCar},${jurusan}'))));
-                                              },
-                                              icon: Icon(Icons.edit)))
-                                      : condPage == 'HAPUS RUTE'
+          Column(
+            children: [
+              Container(
+                child: Center(
+                  child: Text(
+                    condPage,
+                    style: TextStyle(
+                        fontSize: 18,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+              SingleChildScrollView(
+                child: Container(
+                  child: ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    itemCount: _fetchData.length,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ElevatedButton(
+                            style: ButtonStyle(backgroundColor:
+                                MaterialStateProperty.resolveWith<Color>(
+                                    (Set<MaterialState> states) {
+                              if (states.contains(MaterialState.pressed)) {
+                                return Colors.white38; // warna saat ditekan
+                              }
+                              return Colors.blue;
+                            })),
+                            onPressed: () {
+                              print('monitor : _fetchData : ${_fetchData}');
+                              print('monitor : condPage = ${condPage}');
+                              if (condPage == 'PILIH DATA RUTE') {
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (BuildContext context) =>
+                                            carSelect(carSelectonOutside: 'PILIH MOBIL',)));
+                              }
+                            },
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Halte : ${_fetchData[index][DatabaseHelperDir.nameStop]}',
+                                    style: TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w400,
+                                        color: Colors.white),
+                                  ),
+                                  condPage == 'PILIH DATA RUTE'
+                                      ? Container()
+                                      : condPage == 'EDIT NAMA RUTE'
                                           ? Align(
                                               child: IconButton(
                                                   onPressed: () {
-                                                    print(
-                                                        'monitor : ${fetchData[index][DatabaseHelper.columnId]}');
-                                                    _deleteData(index);
-                                                    Navigator.pop(context);
-                                                    setState(() {});
+                                                    // Navigator.push(context, MaterialPageRoute(builder: ((context) => wifiPage(message: '${noCar},${jurusan}'))));
                                                   },
-                                                  icon: Icon(Icons.delete)))
-                                          : condPage == 'BATAL'
-                                              ? Container()
-                                              : condPage == 'KIRIM DATA'
-                                                  ? Align(
-                                                      child: IconButton(
-                                                          onPressed: () {
-                                                            // fungsi simpan data ke mysql lite database user
+                                                  icon: Icon(Icons.edit)))
+                                          : condPage == 'HAPUS RUTE'
+                                              ? Align(
+                                                  child: IconButton(
+                                                      onPressed: () {
+                                                        print(
+                                                            'monitor : ${_fetchData[index][DatabaseHelperDir.columnId]}');
+                                                        _deleteData(index);
+                                                        Navigator.pop(context);
+                                                        setState(() {});
+                                                      },
+                                                      icon: Icon(Icons.delete)))
+                                              : condPage == 'BATAL'
+                                                  ? Container()
+                                                  : condPage == 'KIRIM DATA'
+                                                      ? Align(
+                                                          child: IconButton(
+                                                              onPressed: () {
+                                                                print(
+                                                                    'kirim data');
 
-                                                            // Navigator.push(context, MaterialPageRoute(builder: ((context) => wifiPage(message: '${noCar},${jurusan}'))));
-                                                          },
-                                                          icon:
-                                                              Icon(Icons.send)))
-                                                  : Container()
-                            ],
-                          ),
-                        )),
-                  );
-                },
+                                                                // Navigator.push(context, MaterialPageRoute(builder: ((context) => wifiPage(message: '${noCar},${jurusan}'))));
+                                                              },
+                                                              icon: Icon(
+                                                                  Icons.send)))
+                                                      : Container()
+                                ],
+                              ),
+                            )),
+                      );
+                    },
+                  ),
+                ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -880,13 +941,11 @@ class SlideLeftRoute extends PageRouteBuilder {
         );
 }
 
-
 class PopupEdit extends StatefulWidget {
   int id;
   String name;
 
   PopupEdit({Key? key, required this.id, required this.name}) : super(key: key);
-  
 
   @override
   _PopupEditState createState() => _PopupEditState();
@@ -932,7 +991,6 @@ class _PopupEditState extends State<PopupEdit> {
 
 class PopupAdd extends StatefulWidget {
   PopupAdd({Key? key}) : super(key: key);
-  
 
   @override
   _PopupAddState createState() => _PopupAddState();
@@ -968,7 +1026,11 @@ class _PopupAddState extends State<PopupAdd> {
           onPressed: () {
             String text = _controller.text;
             // Do something with the entered text here
-            Navigator.of(context).pop();
+            insertDataCar(text);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (BuildContext context) => carSelect(carSelectonOutside: 'TAMBAH MOBIL',)),
+            );
           },
         ),
       ],
@@ -980,15 +1042,14 @@ class PopupDelete extends StatefulWidget {
   int id;
   String name;
 
-  PopupDelete({Key? key, required this.id, required this.name}) : super(key: key);
-  
+  PopupDelete({Key? key, required this.id, required this.name})
+      : super(key: key);
 
   @override
   _PopupDeleteState createState() => _PopupDeleteState();
 }
 
 class _PopupDeleteState extends State<PopupDelete> {
-
   @override
   void dispose() {
     super.dispose();
@@ -1010,7 +1071,11 @@ class _PopupDeleteState extends State<PopupDelete> {
           child: Text('Yes'),
           onPressed: () {
             // Do something with the entered text here
-            Navigator.of(context).pop();
+            deleteDataCar(widget.id);
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (BuildContext context) => carSelect(carSelectonOutside: 'HAPUS MOBIL',)),
+            );
           },
         ),
       ],

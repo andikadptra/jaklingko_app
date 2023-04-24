@@ -47,7 +47,6 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   wifi_iot: ^0.3.18
-  flutter_restart: ^0.0.3
   open_app_settings: ^2.0.1
   network_info_plus: ^3.0.2
   flutter_tts: ^3.6.3

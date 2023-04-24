@@ -1,6 +1,6 @@
 import 'package:driver_app/database/database_helper_dir.dart';
 
-final dbHelper = DatabaseHelper.instance;
+final dbHelper = DatabaseHelperDir.instance;
 
 // DATABASE DIRECTION
 
@@ -11,9 +11,9 @@ getDataDir() async {
 
 void insertDataDir(String columnMarkers, columnLatlng, halte) async {
     Map<String, dynamic> row = {
-      DatabaseHelper.nameStop: halte,
-      DatabaseHelper.columnMarkers: columnMarkers,
-      DatabaseHelper.columnLatlng: columnLatlng,
+      DatabaseHelperDir.nameStop: halte,
+      DatabaseHelperDir.columnMarkers: columnMarkers,
+      DatabaseHelperDir.columnLatlng: columnLatlng,
     };
     final id = await dbHelper.insertDir(row);
     print('Data baru dengan id: $id telah disimpan.');
@@ -22,9 +22,9 @@ void insertDataDir(String columnMarkers, columnLatlng, halte) async {
 
   void updateDataDir(String columnMarkers, columnLatlng, halte) async {
     Map<String, dynamic> row = {
-      DatabaseHelper.nameStop: halte,
-      DatabaseHelper.columnMarkers: columnMarkers,
-      DatabaseHelper.columnLatlng: columnLatlng,
+      DatabaseHelperDir.nameStop: halte,
+      DatabaseHelperDir.columnMarkers: columnMarkers,
+      DatabaseHelperDir.columnLatlng: columnLatlng,
     };
     final rowsAffected = await dbHelper.updateDir(row);
     print('$rowsAffected baris telah diperbarui.');

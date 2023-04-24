@@ -5,8 +5,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-class DatabaseHelper {
-  static final _databaseMarkers = "myDatabase.db";
+class DatabaseHelperCar {
+  static final _databaseMarkers = "myDatabaseCar.db";
   static final _databaseVersion = 1;
 
   static final Car_table = 'Latlng_table';
@@ -15,8 +15,8 @@ class DatabaseHelper {
   static final nameCar = 'Car';
 
   // membuat instance DatabaseHelper sebagai singleton
-  DatabaseHelper._privateConstructor();
-  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
+  DatabaseHelperCar._privateConstructor();
+  static final DatabaseHelperCar instance = DatabaseHelperCar._privateConstructor();
 
   // database hanya dapat diakses oleh instance ini
   static Database? _database;
@@ -36,15 +36,15 @@ class DatabaseHelper {
         version: _databaseVersion, onCreate: _onCreate);
   }
 
-  // membuat tabel Latlng_table
-  Future _onCreate(Database db, int version) async {
-    await db.execute('''
-          CREATE TABLE $Car_table (
-            $columnId INTEGER PRIMARY KEY,
-            $nameCar TEXT NOT NULL,
-          )
-          ''');
-  }
+ // membuat tabel Latlng_table
+Future _onCreate(Database db, int version) async {
+  await db.execute('''
+        CREATE TABLE $Car_table (
+          $columnId INTEGER PRIMARY KEY,
+          $nameCar TEXT NOT NULL
+        )
+        ''');
+}
   
 
   // insert data

@@ -12,7 +12,7 @@ class databasePage extends StatefulWidget {
 }
 
 class _databasePageState extends State<databasePage> {
-  final dbHelper = DatabaseHelper.instance;
+  final dbHelper = DatabaseHelperDir.instance;
 
   List<Map<String, dynamic>> _LatlngList = [];
 
@@ -31,8 +31,8 @@ class _databasePageState extends State<databasePage> {
 
   void _insertData() async {
     Map<String, dynamic> row = {
-      DatabaseHelper.columnMarkers: 'John',
-      DatabaseHelper.columnLatlng: 'North',
+      DatabaseHelperDir.columnMarkers: 'John',
+      DatabaseHelperDir.columnLatlng: 'North',
     };
     final id = await dbHelper.insertDir(row);
     print('Data baru dengan id: $id telah disimpan.');
@@ -41,9 +41,9 @@ class _databasePageState extends State<databasePage> {
 
   void _updateData() async {
     Map<String, dynamic> row = {
-      DatabaseHelper.columnId: 1,
-      DatabaseHelper.columnMarkers: 'Jane',
-      DatabaseHelper.columnLatlng: 'South',
+      DatabaseHelperDir.columnId: 1,
+      DatabaseHelperDir.columnMarkers: 'Jane',
+      DatabaseHelperDir.columnLatlng: 'South',
     };
     final rowsAffected = await dbHelper.updateDir(row);
     print('$rowsAffected baris telah diperbarui.');
@@ -70,8 +70,8 @@ class _databasePageState extends State<databasePage> {
             itemCount: _LatlngList.length,
             itemBuilder: (context, index) {
               return ListTile(
-                title: Text(_LatlngList[index][DatabaseHelper.columnMarkers]),
-                subtitle: Text(_LatlngList[index][DatabaseHelper.columnLatlng]),
+                title: Text(_LatlngList[index][DatabaseHelperDir.columnMarkers]),
+                subtitle: Text(_LatlngList[index][DatabaseHelperDir.columnLatlng]),
               );
             },
           ),

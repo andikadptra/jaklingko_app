@@ -5,7 +5,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
-class DatabaseHelper {
+class DatabaseHelperDir {
   static final _databaseMarkers = "myDatabase.db";
   static final _databaseVersion = 1;
 
@@ -16,9 +16,9 @@ class DatabaseHelper {
   static final columnMarkers = 'markers';
   static final columnLatlng = 'latlng';
 
-  // membuat instance DatabaseHelper sebagai singleton
-  DatabaseHelper._privateConstructor();
-  static final DatabaseHelper instance = DatabaseHelper._privateConstructor();
+  // membuat instance DatabaseHelperDir sebagai singleton
+  DatabaseHelperDir._privateConstructor();
+  static final DatabaseHelperDir instance = DatabaseHelperDir._privateConstructor();
 
   // database hanya dapat diakses oleh instance ini
   static Database? _database;
