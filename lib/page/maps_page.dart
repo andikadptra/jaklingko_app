@@ -1,6 +1,7 @@
 import 'package:driver_app/components/constants.dart';
 import 'package:driver_app/database/database_helper_car.dart';
 import 'package:driver_app/database/database_helper_dir.dart';
+import 'package:driver_app/database/database_helper_user.dart';
 import 'package:driver_app/page/first_page.dart';
 import 'package:driver_app/utilitis/utilitis_database_car.dart';
 import 'package:driver_app/utilitis/utilitis_database_dir.dart';
@@ -14,8 +15,9 @@ import 'package:geolocator_platform_interface/src/enums/location_accuracy.dart';
 
 class carSelect extends StatefulWidget {
   late String carSelectonOutside;
-  carSelect({Key? key, required this.carSelectonOutside}) : super(key: key);
-
+  String rute;
+  carSelect({Key? key, required this.carSelectonOutside, required this.rute})
+      : super(key: key);
 
   @override
   State<carSelect> createState() => _carSelectState();
@@ -23,6 +25,8 @@ class carSelect extends StatefulWidget {
 
 class _carSelectState extends State<carSelect> {
   late String catchCarSelect = widget.carSelectonOutside;
+
+  final carDb = CarDatabase.instance;
 
   TextEditingController _controller = TextEditingController();
   bool _keyboardIsVisible = false;
@@ -43,6 +47,22 @@ class _carSelectState extends State<carSelect> {
     setState(() {});
   }
 
+  Future<void> _updateData(String _car, _route) async {
+    final updatedCar = Car(
+      name: _car,
+      route: _route,
+    );
+
+    await CarDatabase.instance.updateRoute(updatedCar.route);
+    setState(() {
+      _route = updatedCar.route;
+    });
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Data berhasil diperbarui')),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -54,14 +74,10 @@ class _carSelectState extends State<carSelect> {
     _controller.dispose();
     super.dispose();
   }
+
   late String appBartxt = widget.carSelectonOutside;
 
-
-
   Widget build(BuildContext context) {
-
-    
-
     return Scaffold(
       floatingActionButton: appBartxt == 'TAMBAH MOBIL'
           ? FloatingActionButton.extended(
@@ -130,25 +146,46 @@ class _carSelectState extends State<carSelect> {
                   color: Colors.blue,
                   borderRadius: BorderRadius.all(Radius.circular(15))),
               child: GestureDetector(
-                onTap: () {
+                onTap: () async {
                   switch (appBartxt) {
                     case 'TAMBAH MOBIL':
-                      
                       break;
                     case 'EDIT NAMA MOBIL':
-
                       break;
                     case 'HAPUS MOBIL':
-                      print('monitor : ${_fetchData[index][DatabaseHelperCar.columnId]}');
+                      print(
+                          'monitor : ${_fetchData[index][DatabaseHelperCar.columnId]}');
                       showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return PopupDelete(id: _fetchData[index][DatabaseHelperCar.columnId], name: _fetchData[index][DatabaseHelperCar.nameCar]);
-                    });
-                      
+                          context: context,
+                          builder: (BuildContext context) {
+                            return PopupDelete(
+                                id: _fetchData[index]
+                                    [DatabaseHelperCar.columnId],
+                                name: _fetchData[index]
+                                    [DatabaseHelperCar.nameCar]);
+                          });
+
                       break;
                     case 'PILIH MOBIL':
-
+                      final car = await CarDatabase.instance.read();
+                      if (car != null) {
+                        _updateData(
+                            '${_fetchData[index][DatabaseHelperCar.nameCar]}',
+                            '${widget.rute}');
+                      } else {
+                        final insertCar = Car(
+                            name:
+                                '${_fetchData[index][DatabaseHelperCar.nameCar]}',
+                            route: '${widget.rute}');
+                        await CarDatabase.instance.create(insertCar);
+                      }
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (BuildContext context) => firstPage(),
+                        ),
+                      );
+                      print('Monitor : data tersimpan');
                       break;
                     default:
                   }
@@ -852,7 +889,11 @@ class _NextPageState extends State<NextPage> {
                                     context,
                                     MaterialPageRoute(
                                         builder: (BuildContext context) =>
-                                            carSelect(carSelectonOutside: 'PILIH MOBIL',)));
+                                            carSelect(
+                                                carSelectonOutside:
+                                                    'PILIH MOBIL',
+                                                rute:
+                                                    '${_fetchData[index][DatabaseHelperDir.nameStop]}')));
                               }
                             },
                             child: Align(
@@ -1029,7 +1070,11 @@ class _PopupAddState extends State<PopupAdd> {
             insertDataCar(text);
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (BuildContext context) => carSelect(carSelectonOutside: 'TAMBAH MOBIL',)),
+              MaterialPageRoute(
+                  builder: (BuildContext context) => carSelect(
+                        carSelectonOutside: 'TAMBAH MOBIL',
+                        rute: '',
+                      )),
             );
           },
         ),
@@ -1074,7 +1119,11 @@ class _PopupDeleteState extends State<PopupDelete> {
             deleteDataCar(widget.id);
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (BuildContext context) => carSelect(carSelectonOutside: 'HAPUS MOBIL',)),
+              MaterialPageRoute(
+                  builder: (BuildContext context) => carSelect(
+                        carSelectonOutside: 'HAPUS MOBIL',
+                        rute: '',
+                      )),
             );
           },
         ),

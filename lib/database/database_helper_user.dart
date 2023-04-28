@@ -1,77 +1,119 @@
 import 'dart:async';
-import 'dart:io';
-
-import 'package:path_provider/path_provider.dart';
-import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
-class DatabaseHelperUser {
-  // ...
+class CarDatabase {
+  static final CarDatabase instance = CarDatabase._init();
 
-  static final String _databaseMarkers = "myDatabase.db";
-
-  static final _databaseVersion = 1;
-
-  static final user_table = 'user_table';
-
-  static final columnId = 'id';
-  static final nameCar = 'car';
-  static final ruteCar = 'rute';
-
-  // membuat instance DatabaseHelperUser sebagai singleton
-  DatabaseHelperUser._privateConstructor();
-  static final DatabaseHelperUser instance = DatabaseHelperUser._privateConstructor();
-
-  // database hanya dapat diakses oleh instance ini
   static Database? _database;
+
+  CarDatabase._init();
+
   Future<Database> get database async {
     if (_database != null) return _database!;
 
-    // jika belum ada database, buat database baru
-    _database = await _initDatabase();
+    _database = await _initDB('car.db');
     return _database!;
   }
 
-  // inisialisasi database pada lokasi yang berbeda dengan data aplikasi
-  _initDatabase() async {
-    Directory documentsCarectory = await getApplicationDocumentsDirectory();
-    String path = join(documentsCarectory.path, _databaseMarkers);
-    return await openDatabase(path,
-        version: _databaseVersion, onCreate: _onCreate);
+  Future<Database> _initDB(String filePath) async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, filePath);
+
+    return await openDatabase(
+      path,
+      version: 1,
+      onCreate: _createDB,
+    );
   }
 
-  // membuat tabel user_table
-  Future _onCreate(Database db, int version) async {
+  Future<void> _createDB(Database db, int version) async {
     await db.execute('''
-          CREATE TABLE $user_table (
-            $columnId INTEGER PRIMARY KEY,
-            $nameCar TEXT NOT NULL,
-            $ruteCar TEXT NOT NULL
-          )
-          ''');
-  }
-  
-
-  // insert data
-  Future<int> insertCar(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    Map<String, dynamic> filteredRow = {'$nameCar': row[nameCar], '$ruteCar': row[ruteCar]};
-    return await db.insert(user_table, filteredRow);
+CREATE TABLE cars (
+  id INTEGER PRIMARY KEY,
+  name TEXT,
+  route TEXT
+)
+''');
   }
 
-  // update data
-  Future<int> updateInfoUser(Map<String, dynamic> row) async {
-    Database db = await instance.database;
-    Map<String, dynamic> filteredRow = {'$nameCar': row[nameCar], '$ruteCar': row[ruteCar]};
-    int id = row[columnId];
-    return await db.update(user_table, filteredRow, where: '$columnId = ?', whereArgs: [id]);
+  Future<Car> create(Car car) async {
+    final db = await instance.database;
+    final id = await db.insert('cars', car.toJson());
+    return car.copy(id: id);
   }
 
-  // ambil semua data
-  Future<List<Map<String, dynamic>>> queryAllRowsCar() async {
-    Database db = await instance.database;
-    List<String> columnsToSelect = ['$nameCar', '$ruteCar'];
-    return await db.query(user_table, columns: columnsToSelect);
+  Future<Car?> read() async {
+    final db = await instance.database;
+    final maps = await db.query('cars', limit: 1);
+
+    if (maps.isNotEmpty) {
+      return Car.fromJson(maps.first);
+    } else {
+      return null;
+    }
   }
 
+  Future<int> updateRoute(String route) async {
+    final db = await instance.database;
+    return db.update(
+      'cars',
+      {'route': route},
+      where: 'id = ?',
+      whereArgs: [1],
+    );
+  }
+
+  Future<void> delete(int id) async {
+    final db = await instance.database;
+    await db.delete(
+      'cars',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<List<Car>> readAll() async {
+    final db = await instance.database;
+    final maps = await db.query('cars');
+
+    return List.generate(maps.length, (i) {
+      return Car.fromJson(maps[i]);
+    });
+  }
+}
+
+class Car {
+  final int? id;
+  final String name;
+  final String route;
+
+  Car({
+    this.id,
+    required this.name,
+    required this.route,
+  });
+
+  Car copy({
+    int? id,
+    String? name,
+    String? route,
+  }) =>
+      Car(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        route: route ?? this.route,
+      );
+
+  static Car fromJson(Map<String, Object?> json) => Car(
+        id: json['id'] as int?,
+        name: json['name'] as String,
+        route: json['route'] as String,
+      );
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'name': name,
+        'route': route,
+      };
 }

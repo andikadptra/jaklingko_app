@@ -2,19 +2,16 @@
 
 import 'package:driver_app/page/maps_page.dart';
 import 'package:driver_app/page/wifi_page.dart';
+import 'package:driver_app/database/database_helper_user.dart';
 import 'package:driver_app/utilitis/wifi_communicate.dart';
 import 'package:flutter/material.dart';
-import 'dart:io' show Platform;
 import 'package:intl/intl.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:driver_app/utilitis/geolocator.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:network_info_plus/network_info_plus.dart';
 
-
 class firstPage extends StatefulWidget {
-  
   const firstPage({Key? key}) : super(key: key);
 
   @override
@@ -22,17 +19,45 @@ class firstPage extends StatefulWidget {
 }
 
 class _firstPageState extends State<firstPage> {
-  
-  
   final FlutterTts flutterTts = FlutterTts();
+  String rute = '';
+  String car = '';
+  String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    String currentTime = DateFormat('HH:mm').format(DateTime.now());
+    String statusCar = 'STATUS CAR';
+    String displayText = 'MAAF SEDANG ISI BBM';
+    String soundName = '001';
+    String latitude = 'XXXXXXX';
+    String longitude = 'XXXXXXX';
+    String cog = 'XXXXXXX';
+    String sat = 'XX';
+    bool check = true;
+    int speed = 10;
+    var savedCar;
 
+    getDataUser() {
+        final carDb = CarDatabase.instance;
+
+      catchDb() async {
+        savedCar = await CarDatabase.instance.read();
+      }
+
+      if (check) {
+        catchDb();
+        if (savedCar != null) {
+          setState(() {
+            car = savedCar!.name;
+            rute = savedCar!.route;
+          });
+        }
+      }
+    }
 
   @override
   Future<bool> handleLocationPermission() async {
     String locationDen = 'Buka pengaturan, dan izinkan Lokasi!';
     bool serviceEnabled;
     LocationPermission permission;
-
 
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -68,8 +93,6 @@ class _firstPageState extends State<firstPage> {
     return myTextStyle;
   }
 
-  
-
   Future speak(String message) async {
     await flutterTts.setLanguage("id-ID");
     await flutterTts.setSpeechRate(0.6);
@@ -78,42 +101,42 @@ class _firstPageState extends State<firstPage> {
     await flutterTts.speak(message);
   }
 
-//   void restartApp() {
-//   if (Platform.isAndroid) {
-//     // Untuk aplikasi Android, gunakan plugin platform_channel untuk melakukan restart
-//     MethodChannel('samples.flutter.dev/restart').invokeMethod('restart');
-//   } else if (Platform.isIOS) {
-//     // Untuk aplikasi iOS, gunakan kelas `FlutterViewController` untuk melakukan restart
-//     final FlutterViewController viewController = window.rootViewController;
-//     viewController.restartApp();
-//   }
-// }
-
   @override
   Widget build(BuildContext context) {
-    
-    String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-    String currentTime = DateFormat('HH:mm').format(DateTime.now());
-    String statusCar = 'STATUS CAR';
-    String displayText = 'MAAF SEDANG ISI BBM';
-    String soundName = '001';
     String timeNow = '${currentDate} ${currentTime}';
-    String latitude = 'XXXXXXX';
-    String longitude = 'XXXXXXX';
-    String cog = 'XXXXXXX';
-    String sat = 'XX';
-    String rute = 'B10 Jakarta - Depok';
-    int speed = 10;
+
+    getDataUser();
+    
+
     // bool audioPlay = false;
     Orientation orientation = MediaQuery.of(context).orientation;
-double widthScreen = MediaQuery.of(context).size.width;
-    double heightScreen =
-        MediaQuery.of(context).size.height;
-      return Scaffold(
+    double widthScreen = MediaQuery.of(context).size.width;
+    double heightScreen = MediaQuery.of(context).size.height;
+    return Scaffold(
       floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,
-      floatingActionButton: FloatingActionButton(backgroundColor: Colors.white, onPressed: () async {
-        // await FlutterRestart.restartApp();
-      }, child: Icon(Icons.restart_alt, color: Colors.blue,),),
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.white,
+        onPressed: () async {
+          // final savedCar = await CarDatabase.instance.read();
+          final carDatabase = CarDatabase.instance;
+          final car = await carDatabase.read();
+
+          final name = car!.route;
+          // print('monitor ${name}');
+          setState(() {
+            print('monitor : ${car} ${rute}');
+          });
+
+          // final cars = await CarDatabase.instance.readAll();
+          // cars.forEach((car) {
+          //   print('monitor : ${car.toJson()}');
+          // });
+        },
+        child: Icon(
+          Icons.restart_alt,
+          color: Colors.blue,
+        ),
+      ),
       body: Align(
         alignment: Alignment.bottomCenter,
         child: Container(
@@ -211,7 +234,7 @@ double widthScreen = MediaQuery.of(context).size.width;
                         child: Column(
                           children: [
                             Text(
-                              'RUTE : ${rute}',
+                              'RUTE : ${savedCar != null ? car.toUpperCase() : ''} - ${savedCar != null ? rute.toUpperCase() : ''}',
                               style: myTextStyle(18, FontWeight.w500),
                             ),
                             Padding(
@@ -265,8 +288,11 @@ double widthScreen = MediaQuery.of(context).size.width;
                       child: ElevatedButton(
                           onPressed: () {
                             print('pindah rute');
-                              Navigator.push(context, MaterialPageRoute(
-                                builder: ((context) =>  MyMap(condition: 'normal'))));
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: ((context) =>
+                                        MyMap(condition: 'normal'))));
                           },
                           child: Container(
                             width: widthScreen,
@@ -280,7 +306,8 @@ double widthScreen = MediaQuery.of(context).size.width;
                       padding: const EdgeInsets.all(8.0),
                       child: ElevatedButton(
                           onPressed: () async {
-                            await speak("Mulai perjalanan, tetap fokus dan hati hati dijalan");
+                            await speak(
+                                "Mulai perjalanan, tetap fokus dan hati hati dijalan");
                             await flutterTts.awaitSpeakCompletion(true);
                           },
                           child: Container(
@@ -298,18 +325,16 @@ double widthScreen = MediaQuery.of(context).size.width;
                           padding: const EdgeInsets.all(8.0),
                           child: ElevatedButton(
                               onPressed: () async {
-                                
-                                
-                              await speak("Sedang Mengisi BBM");
-                                  setState(() {
-                                    statusCar = 'ISI BBM';
-                                    displayText = 'MAAF SEDANG MENGISI BBM';
-                                  });
-                              await flutterTts.awaitSpeakCompletion(true);
-                              print("Speech selesai");
+                                await speak("Sedang Mengisi BBM");
+                                setState(() {
+                                  statusCar = 'ISI BBM';
+                                  displayText = 'MAAF SEDANG MENGISI BBM';
+                                });
+                                await flutterTts.awaitSpeakCompletion(true);
+                                print("Speech selesai");
                               },
                               child: Container(
-                                width: widthScreen / 2 /2.7,
+                                width: widthScreen / 2 / 2.7,
                                 height: 50,
                                 child: Center(
                                   child: Text('ISI BBM'),
@@ -322,16 +347,20 @@ double widthScreen = MediaQuery.of(context).size.width;
                               onPressed: () async {
                                 await speak("Mobil perjalanan pulang");
                                 setState(() {
-                                    statusCar = 'PERJALANAN PULANG';
-                                    displayText = 'MOBIL SEDANG DALAM PERJALANAN PULANG';
-                                  });
+                                  statusCar = 'PERJALANAN PULANG';
+                                  displayText =
+                                      'MOBIL SEDANG DALAM PERJALANAN PULANG';
+                                });
                                 await flutterTts.awaitSpeakCompletion(true);
-                                
-                                
-                            Navigator.push(context, MaterialPageRoute(builder: ((context) => wifiPage(message: 'Perjalanan pulang'))));
+
+                                Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: ((context) => wifiPage(
+                                            message: 'Perjalanan pulang'))));
                               },
                               child: Container(
-                                width: widthScreen /2/ 2.7,
+                                width: widthScreen / 2 / 2.7,
                                 height: 50,
                                 child: Center(
                                   child: Text('PERGI / PULANG'),
@@ -347,21 +376,21 @@ double widthScreen = MediaQuery.of(context).size.width;
                           padding: const EdgeInsets.all(8.0),
                           child: ElevatedButton(
                               onPressed: () async {
-                                
                                 /*
                                  SEND STRING TO WIFI
                                  MASUKAN NAMA SSID DAN PASSWORDNYA!
                                 */
 
                                 await speak("mematikan TiVi");
-                              await flutterTts.awaitSpeakCompletion(true);
-                              final info = NetworkInfo();
-                              final ssid = '';
-                              final password = '';
-                              UdpSender().sendMessage('Mematikan TV', ssid, password);
+                                await flutterTts.awaitSpeakCompletion(true);
+                                final info = NetworkInfo();
+                                final ssid = '';
+                                final password = '';
+                                UdpSender().sendMessage(
+                                    'Mematikan TV', ssid, password);
                               },
                               child: Container(
-                                width: widthScreen /2/ 2.7,
+                                width: widthScreen / 2 / 2.7,
                                 height: 50,
                                 child: Center(
                                   child: Text('OFF TV'),
@@ -372,15 +401,17 @@ double widthScreen = MediaQuery.of(context).size.width;
                           padding: const EdgeInsets.all(8.0),
                           child: ElevatedButton(
                               onPressed: () async {
-                                await speak("Selamat datang penumpang, silahkan untuk menempati tempat duduk yang kosong");
+                                await speak(
+                                    "Selamat datang penumpang, silahkan untuk menempati tempat duduk yang kosong");
                                 setState(() {
-                                    statusCar = 'SELAMAT DATANG';
-                                    displayText = 'SELAMAT DATANG PENUMPANG SETIA';
-                                  });
-                              await flutterTts.awaitSpeakCompletion(true);
+                                  statusCar = 'SELAMAT DATANG';
+                                  displayText =
+                                      'SELAMAT DATANG PENUMPANG SETIA';
+                                });
+                                await flutterTts.awaitSpeakCompletion(true);
                               },
                               child: Container(
-                                width: widthScreen /2/ 2.7,
+                                width: widthScreen / 2 / 2.7,
                                 height: 50,
                                 child: Center(
                                   child: Text('SELAMAT DATANG'),
@@ -397,10 +428,10 @@ double widthScreen = MediaQuery.of(context).size.width;
                           child: ElevatedButton(
                               onPressed: () async {
                                 await speak("sistem tes");
-                              await flutterTts.awaitSpeakCompletion(true);
+                                await flutterTts.awaitSpeakCompletion(true);
                               },
                               child: Container(
-                                width: widthScreen /2/ 2.7,
+                                width: widthScreen / 2 / 2.7,
                                 height: 50,
                                 child: Center(
                                   child: Text('SISTEM TES'),
@@ -412,10 +443,10 @@ double widthScreen = MediaQuery.of(context).size.width;
                           child: ElevatedButton(
                               onPressed: () async {
                                 await speak("wiu wiu wiu wiu");
-                              await flutterTts.awaitSpeakCompletion(true);
+                                await flutterTts.awaitSpeakCompletion(true);
                               },
                               child: Container(
-                                width: widthScreen /2/ 2.7,
+                                width: widthScreen / 2 / 2.7,
                                 height: 50,
                                 child: Center(
                                   child: Text('PANIC BUTTON'),
@@ -427,11 +458,10 @@ double widthScreen = MediaQuery.of(context).size.width;
                   ],
                 ),
               ),
-              
             ],
           ),
         ),
       ),
     );
-    }
   }
+}
