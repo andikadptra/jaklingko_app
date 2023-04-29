@@ -29,9 +29,6 @@ class _carSelectState extends State<carSelect> {
   final carDb = CarDatabase.instance;
 
   TextEditingController _controller = TextEditingController();
-  bool _keyboardIsVisible = false;
-  late String selectedRoute;
-  late String selectedCar;
 
   List<String> menuItems = [
     'TAMBAH MOBIL',
@@ -76,8 +73,13 @@ class _carSelectState extends State<carSelect> {
   }
 
   late String appBartxt = widget.carSelectonOutside;
+  
+  late String selectedRoute;
 
   Widget build(BuildContext context) {
+    
+    selectedRoute = widget.rute;
+
     return Scaffold(
       floatingActionButton: appBartxt == 'TAMBAH MOBIL'
           ? FloatingActionButton.extended(
@@ -151,32 +153,40 @@ class _carSelectState extends State<carSelect> {
                     case 'TAMBAH MOBIL':
                       break;
                     case 'EDIT NAMA MOBIL':
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context){
+                          return PopupEdit(id: _fetchData[index][DatabaseHelperCar.columnId], name: _fetchData[index][DatabaseHelperCar.nameCar], database: 'mobil');
+                        });
                       break;
                     case 'HAPUS MOBIL':
                       print(
                           'monitor : ${_fetchData[index][DatabaseHelperCar.columnId]}');
-                      showDialog(
+                          showDialog(
                           context: context,
                           builder: (BuildContext context) {
                             return PopupDelete(
                                 id: _fetchData[index]
                                     [DatabaseHelperCar.columnId],
                                 name: _fetchData[index]
-                                    [DatabaseHelperCar.nameCar]);
+                                    [DatabaseHelperCar.nameCar],
+                                database: 'mobil',
+                                    );
                           });
 
                       break;
                     case 'PILIH MOBIL':
                       final car = await CarDatabase.instance.read();
+                      // print('monitor : ${_fetchData[index][DatabaseHelperCar.nameCar]}');
                       if (car != null) {
                         _updateData(
                             '${_fetchData[index][DatabaseHelperCar.nameCar]}',
-                            '${widget.rute}');
+                            '${selectedRoute}');
                       } else {
                         final insertCar = Car(
                             name:
                                 '${_fetchData[index][DatabaseHelperCar.nameCar]}',
-                            route: '${widget.rute}');
+                            route: '${selectedRoute}');
                         await CarDatabase.instance.create(insertCar);
                       }
                       Navigator.pushReplacement(
@@ -244,7 +254,6 @@ class _MyMapState extends State<MyMap> {
 
   StreamSubscription<Position>? _positionStreamSubscription;
   bool _isPaused = false;
-
   Set<Polyline> _polyLines = Set<Polyline>();
   bool pause = false;
   List<dynamic> listMapSave = [];
@@ -702,33 +711,9 @@ class _MyMapState extends State<MyMap> {
         ));
   }
 
-  // void setPolylines() async {
-  //   print('Monitor : setPolylines');
-  //   PolylineResult result = await polylinePoints!.getRouteBetweenCoordinates(
-  //       "AIzaSyDr54SJAd8woqkYBK_PQhFZr5c3ocdXTOI",
-  //       PointLatLng(sourceLocation.latitude, sourceLocation.longitude),
-  //       PointLatLng(
-  //           destinationLocation.latitude, destinationLocation.longitude));
-  //   print('Monitor : result status = ${result.status}');
-  //   if (result.status == "OK") {
-  //     print('Monitor : ok');
-  //     result.points.forEach((PointLatLng point) {
-  //       polylineCoordinates.add(LatLng(point.latitude, point.longitude));
-  //     });
-
-  //     setState(() {
-  //       _polyLines.add(Polyline(
-  //           width: 10,
-  //           polylineId: PolylineId("Polyline"),
-  //           color: Colors.blue,
-  //           points: polylineCoordinates));
-  //       print("monitor : ${_polyLines}");
-  //     });
-  //   }
-  // }
 }
 
-// more page
+// MORE PAGE =============================================================================
 
 class NextPage extends StatefulWidget {
   @override
@@ -765,6 +750,7 @@ class _NextPageState extends State<NextPage> {
 
   String condPage = 'PILIH DATA RUTE';
   String appBartxt = 'PILIH DATA RUTE';
+  bool editData = false;
 
   @override
   Widget build(BuildContext context) {
@@ -836,10 +822,12 @@ class _NextPageState extends State<NextPage> {
                 child: Center(
                   child: IconButton(
                       onPressed: () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => firstPage()),
-                        );
+                        getDataDir();
+                        print('monitor : ${_fetchData[0][DatabaseHelperDir.nameStop]}');
+                        // Navigator.pushReplacement(
+                        //   context,
+                        //   MaterialPageRoute(builder: (context) => firstPage()),
+                        // );
                       },
                       icon: Icon(
                         Icons.home,
@@ -902,30 +890,36 @@ class _NextPageState extends State<NextPage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(
+                                  editData ? Container() : Text(
                                     'Halte : ${_fetchData[index][DatabaseHelperDir.nameStop]}',
                                     style: TextStyle(
                                         fontSize: 18,
                                         fontWeight: FontWeight.w400,
                                         color: Colors.white),
                                   ),
+                                  
                                   condPage == 'PILIH DATA RUTE'
                                       ? Container()
                                       : condPage == 'EDIT NAMA RUTE'
                                           ? Align(
                                               child: IconButton(
                                                   onPressed: () {
-                                                    // Navigator.push(context, MaterialPageRoute(builder: ((context) => wifiPage(message: '${noCar},${jurusan}'))));
+                                                    showDialog(
+                                                      context: context,
+                                                      builder: (BuildContext context) {
+                                                        return PopupEdit(id: _fetchData[index][DatabaseHelperDir.columnId], name: _fetchData[index][DatabaseHelperDir.nameStop], database: 'rute');
+                                                    });
                                                   },
                                                   icon: Icon(Icons.edit)))
                                           : condPage == 'HAPUS RUTE'
                                               ? Align(
                                                   child: IconButton(
                                                       onPressed: () {
-                                                        print(
-                                                            'monitor : ${_fetchData[index][DatabaseHelperDir.columnId]}');
-                                                        _deleteData(index);
-                                                        Navigator.pop(context);
+                                                        showDialog(
+                                                          context: context,
+                                                          builder: (BuildContext context) {
+                                                            return PopupDelete(id: _fetchData[index][DatabaseHelperDir.columnId], name: _fetchData[index][DatabaseHelperDir.nameStop], database: 'rute',);
+                                                          });
                                                         setState(() {});
                                                       },
                                                       icon: Icon(Icons.delete)))
@@ -985,8 +979,9 @@ class SlideLeftRoute extends PageRouteBuilder {
 class PopupEdit extends StatefulWidget {
   int id;
   String name;
+  String database;
 
-  PopupEdit({Key? key, required this.id, required this.name}) : super(key: key);
+  PopupEdit({Key? key, required this.id, required this.name, required this.database}) : super(key: key);
 
   @override
   _PopupEditState createState() => _PopupEditState();
@@ -1005,7 +1000,7 @@ class _PopupEditState extends State<PopupEdit> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('EDIT ${widget.name}'),
+      title: Text('EDIT ${widget.name.toUpperCase()}'),
       content: TextField(
         controller: _controller,
         decoration: InputDecoration(hintText: 'Masukan Nama Baru'),
@@ -1021,8 +1016,17 @@ class _PopupEditState extends State<PopupEdit> {
           child: Text('Save'),
           onPressed: () {
             String text = _controller.text;
+            if (widget.database == 'rute') {
+              updateDataDir(widget.id, text);
+            }else if(widget.database == 'mobil') {
+              updateDataCar(widget.id, text);
+            }
             // Do something with the entered text here
-            Navigator.of(context).pop();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                  builder: (BuildContext context) => NextPage()),
+            );
           },
         ),
       ],
@@ -1086,8 +1090,9 @@ class _PopupAddState extends State<PopupAdd> {
 class PopupDelete extends StatefulWidget {
   int id;
   String name;
+  String database;
 
-  PopupDelete({Key? key, required this.id, required this.name})
+  PopupDelete({Key? key, required this.id, required this.name, required this.database})
       : super(key: key);
 
   @override
@@ -1116,18 +1121,28 @@ class _PopupDeleteState extends State<PopupDelete> {
           child: Text('Yes'),
           onPressed: () {
             // Do something with the entered text here
-            deleteDataCar(widget.id);
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (BuildContext context) => carSelect(
-                        carSelectonOutside: 'HAPUS MOBIL',
-                        rute: '',
-                      )),
-            );
+            if (widget.database == 'mobil') {
+              deleteDataCar(widget.id);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (BuildContext context) => carSelect(
+                          carSelectonOutside: 'HAPUS MOBIL',
+                          rute: '',
+                        )),
+              );
+            }else if (widget.database == 'rute') {
+              deleteDataDir(widget.id);
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(
+                    builder: (BuildContext context) => NextPage()),
+              );
+            }
           },
         ),
       ],
     );
   }
 }
+

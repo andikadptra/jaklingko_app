@@ -20,14 +20,13 @@ void insertDataDir(String columnMarkers, columnLatlng, halte) async {
     getDataDir();
   }
 
-  void updateDataDir(String columnMarkers, columnLatlng, halte) async {
+  void updateDataDir(int id, String halte) async {
     Map<String, dynamic> row = {
+      DatabaseHelperDir.columnId: id,
       DatabaseHelperDir.nameStop: halte,
-      DatabaseHelperDir.columnMarkers: columnMarkers,
-      DatabaseHelperDir.columnLatlng: columnLatlng,
     };
     final rowsAffected = await dbHelper.updateDir(row);
-    print('$rowsAffected baris telah diperbarui.');
+    print('monitor : $rowsAffected baris telah diperbarui.');
     getDataDir();
   }
 

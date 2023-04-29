@@ -23,35 +23,35 @@ class _firstPageState extends State<firstPage> {
   String rute = '';
   String car = '';
   String currentDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-    String currentTime = DateFormat('HH:mm').format(DateTime.now());
-    String statusCar = 'STATUS CAR';
-    String displayText = 'MAAF SEDANG ISI BBM';
-    String soundName = '001';
-    String latitude = 'XXXXXXX';
-    String longitude = 'XXXXXXX';
-    String cog = 'XXXXXXX';
-    String sat = 'XX';
-    bool check = true;
-    int speed = 10;
-    var savedCar;
+  String currentTime = DateFormat('HH:mm').format(DateTime.now());
+  String statusCar = '-';
+  String displayText = '-';
+  String soundName = '001';
+  String latitude = 'XXXXXXX';
+  String longitude = 'XXXXXXX';
+  String cog = 'XXXXXXX';
+  String sat = 'XX';
+  bool check = true;
+  int speed = 10;
+  var savedCar;
 
-    getDataUser() {
-        final carDb = CarDatabase.instance;
+  getDataUser() {
+    final carDb = CarDatabase.instance;
 
-      catchDb() async {
-        savedCar = await CarDatabase.instance.read();
-      }
+    catchDb() async {
+      savedCar = await CarDatabase.instance.read();
+    }
 
-      if (check) {
-        catchDb();
-        if (savedCar != null) {
-          setState(() {
-            car = savedCar!.name;
-            rute = savedCar!.route;
-          });
-        }
+    if (check) {
+      catchDb();
+      if (savedCar != null) {
+        setState(() {
+          car = savedCar!.name;
+          rute = savedCar!.route;
+        });
       }
     }
+  }
 
   @override
   Future<bool> handleLocationPermission() async {
@@ -106,7 +106,6 @@ class _firstPageState extends State<firstPage> {
     String timeNow = '${currentDate} ${currentTime}';
 
     getDataUser();
-    
 
     // bool audioPlay = false;
     Orientation orientation = MediaQuery.of(context).orientation;
@@ -118,13 +117,13 @@ class _firstPageState extends State<firstPage> {
         backgroundColor: Colors.white,
         onPressed: () async {
           // final savedCar = await CarDatabase.instance.read();
-          final carDatabase = CarDatabase.instance;
-          final car = await carDatabase.read();
+          // final carDatabase = CarDatabase.instance;
+          // final car = await carDatabase.read();
 
-          final name = car!.route;
+          // final name = car!.route;
           // print('monitor ${name}');
           setState(() {
-            print('monitor : ${car} ${rute}');
+            print('monitor : ${car}');
           });
 
           // final cars = await CarDatabase.instance.readAll();
@@ -308,7 +307,10 @@ class _firstPageState extends State<firstPage> {
                           onPressed: () async {
                             await speak(
                                 "Mulai perjalanan, tetap fokus dan hati hati dijalan");
+                                statusCar = 'DALAM PERJALANAN';
+                                displayText = 'SEDANG DALAM PERJALANAN';
                             await flutterTts.awaitSpeakCompletion(true);
+                            setState(() {});
                           },
                           child: Container(
                             width: widthScreen,
@@ -345,11 +347,25 @@ class _firstPageState extends State<firstPage> {
                           padding: const EdgeInsets.all(8.0),
                           child: ElevatedButton(
                               onPressed: () async {
-                                await speak("Mobil perjalanan pulang");
-                                setState(() {
+                                String result = await showDialog(
+                                  context: context,
+                                  builder: (BuildContext context) {
+                                    return MyDialog();
+                                  },
+                                );
+
+                                // Lakukan aksi berdasarkan hasil yang dipilih oleh pengguna
+                                if (result == '1') {
                                   statusCar = 'PERJALANAN PULANG';
+                                  await speak("Mobil perjalanan pulang");
+                                } else if (result == '2') {
+                                  statusCar = 'PERJALANAN PERGI';
+                                  await speak("Mobil perjalanan pergi");
+                                }
+
+                                setState(() {
                                   displayText =
-                                      'MOBIL SEDANG DALAM PERJALANAN PULANG';
+                                      'MOBIL SEDANG ${statusCar.toUpperCase()}';
                                 });
                                 await flutterTts.awaitSpeakCompletion(true);
 
@@ -462,6 +478,47 @@ class _firstPageState extends State<firstPage> {
           ),
         ),
       ),
+    );
+  }
+}
+
+class MyDialog extends StatefulWidget {
+  const MyDialog({Key? key}) : super(key: key);
+
+  @override
+  State<MyDialog> createState() => _MyDialogState();
+}
+
+class _MyDialogState extends State<MyDialog> {
+  final FlutterTts flutterTts = FlutterTts();
+
+  Future speak(String message) async {
+    await flutterTts.setLanguage("id-ID");
+    await flutterTts.setSpeechRate(0.6);
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setVolume(1.0);
+    await flutterTts.speak(message);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('PERJALANAN'),
+      content: Text('PILIH KONDISI PERJALANAN'),
+      actions: <Widget>[
+        TextButton(
+          child: Text('PERJALANAN PULANG'),
+          onPressed: () async {
+            Navigator.pop(context, '1');
+          },
+        ),
+        TextButton(
+          child: Text('PERJALANAN PERGI'),
+          onPressed: () async {
+            Navigator.pop(context, '2');
+          },
+        ),
+      ],
     );
   }
 }

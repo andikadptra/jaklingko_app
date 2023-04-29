@@ -57,7 +57,7 @@ dev_dependencies:
   permission_handler: ^10.2.0
   flutter_svg : ^1.1.0
   app_settings: ^4.2.0
-  audioplayers: ^0.19.1
+  # audioplayers: ^0.19.1
   path_provider: ^2.0.5
   sqflite: ^2.0.0+3
   google_maps_flutter: ^2.2.5
